@@ -92,7 +92,7 @@ export function libc_init(memory) {
         memview.setUint8(header, memview.getUint8(header) & 0xFFFE);
         // FIXME: we should be doing some block merging here to reduce fragmentation
         // printBlocks(memview);
-      }
+      },
     };
   }
 

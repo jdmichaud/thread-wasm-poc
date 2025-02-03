@@ -4,6 +4,7 @@ import { libc_init } from './libc.js';  // Import an ES module function
 let env;
 let instance;
 let moduleExports;
+const textDecoder = new TextDecoder();
 
 onmessage = async (event) => {
   console.log('Message received in worker:', event.data);
@@ -11,6 +12,15 @@ onmessage = async (event) => {
     const env = {
       ...event.data.env,
       ...libc_init(event.data.env.memory),
+      // Add a log string to the buffer
+      printString: (offset) => {
+        const mem = new Uint8Array(event.data.env.memory.buffer);
+        let size = 0;
+        while (mem[offset + size] !== 0) { ++size; }
+        // chrome does not allow TextBuffer on SharedArrayBuffer
+        const copy = mem.slice(offset, offset + size);
+        console.log(textDecoder.decode(copy));
+      },
     };
     instance = await WebAssembly.instantiate(event.data.module, { env });
     moduleExports = Object.keys(instance.exports).filter(k => !k.startsWith('_'));

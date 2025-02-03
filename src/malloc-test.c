@@ -2,6 +2,7 @@ extern unsigned char __heap_base;
 
 extern void *malloc(unsigned long size);
 extern void free(void *);
+extern void printString(void *);
 
 __attribute__ ((visibility("default")))
 void *get_heap_base(void) {
