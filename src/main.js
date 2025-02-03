@@ -1,3 +1,10 @@
+import {
+  libc_init,
+  nextBlock,
+  NULL,
+  printBlocks,
+} from './libc.js';
+
 async function detectThreadSupport() {
   if (typeof MessageChannel !== "undefined") {
     // Test for transferability of SABs (needed for Firefox)
@@ -17,7 +24,9 @@ async function detectThreadSupport() {
 // methods returns a promise resolving to the returned value.
 async function makeWorker(url, env) {
   const moduleBytes = await (await fetch(url)).arrayBuffer();
-  const compilationResult = await WebAssembly.instantiate(moduleBytes, { env });
+  // Precompile here so that we pass a module to a worker to prevent multiple
+  // compilations of the same module.
+  const wasmmodule = await WebAssembly.compile(moduleBytes);
 
   const worker = new Worker(new URL('worker.js', import.meta.url), { type: 'module' });
 
@@ -89,8 +98,8 @@ async function makeWorker(url, env) {
   // Initialize the worker
   worker.postMessage({
     type: '__init__',
-    module: compilationResult.module,
-    memory: env.memory,
+    module: wasmmodule,
+    env: env,
   });
 
   return initPromise;
@@ -104,11 +113,19 @@ async function main() {
   }
 
   const memory = new WebAssembly.Memory({ initial: 131072 / 65536, maximum: 1048576 / 65536, shared: true })
+  window.wasmmemory = memory;
   const env = { memory };
   new Uint8Array(memory.buffer).fill(0);
 
-  const worker = await makeWorker('fibonacci.wasm', env);
-  console.log(await Promise.all(Array.from(Array(16).keys()).map(i => worker.fibonacci(i))));
+  // window.libc = libc_init(memory);
+
+  // const workers = [await makeWorker('fibonacci.wasm', env), await makeWorker('fibonacci.wasm', env)];
+  // console.log(await Promise.all(Array.from(Array(16).keys()).map(i => workers[i % workers.length].fibonacci(i))));
+
+  const worker = await makeWorker('malloc-test.wasm', env);
+  await worker.malloc_test(1000, 100);
+  printBlocks(memory);
 }
 
 window.onload = main;
+window.printBlocks = printBlocks;

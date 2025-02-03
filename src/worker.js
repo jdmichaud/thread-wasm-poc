@@ -1,5 +1,5 @@
 // worker.js is treated as an ES module
-import { malloc } from './libc.js';  // Import an ES module function
+import { libc_init } from './libc.js';  // Import an ES module function
 
 let env;
 let instance;
@@ -8,9 +8,9 @@ let moduleExports;
 onmessage = async (event) => {
   console.log('Message received in worker:', event.data);
   if (event.data.type === '__init__') {
-    env = {
-      memory: event.data.memory,
-      malloc,
+    const env = {
+      ...event.data.env,
+      ...libc_init(event.data.env.memory),
     };
     instance = await WebAssembly.instantiate(event.data.module, { env });
     moduleExports = Object.keys(instance.exports).filter(k => !k.startsWith('_'));
