@@ -1,0 +1,19 @@
+{
+  "name": "thread-wasm-poc",
+  "version": "0.1.0",
+  "main": "main.js",
+  "scripts": {
+    "build": "rm -fr dist && mkdir dist && npm run build:wasm:thread-detect-module && npm run build:wasm:fibonacci && npm run install:assets",
+    "install:assets": "cp -v assets/* dist/ && cp -v src/*.js dist/",
+    "build:wasm:thread-detect-module": "wat2wasm --enable-thread src/thread-detect-module.wat -o dist/thread-detect-module.wasm",
+    "build:wasm:fibonacci": "clang --target=wasm32 --no-standard-libraries -Wall -ffp-contract=fast -mrelaxed-simd -matomics -mbulk-memory -ffast-math -ggdb3 -O3 -Wl,--import-memory -Wl,--export-all -Wl,--no-entry,--allow-undefined,--shared-memory,--initial-memory=131072,--max-memory=1048576 -o dist/fibonacci.wasm src/fibonacci.c",
+    "serve": "cd dist && python3 ../server.py",
+    "start": "npm run build && npm run serve"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@jdmichaud/wasm-toolkit": "file:../../projects/wasm-toolkit/jdmichaud-wasm-toolkit-19.0.0.tgz"
+  }
+}
